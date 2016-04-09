@@ -1,0 +1,81 @@
+'  *****  BASIC  *****
+' 
+'  Lookup the price of a security from the portfolio database for a given date
+'
+'  Written by Michael Perfit, April 7, 2016
+'
+'
+'  The easiest way to deploy this in Libreoffice calc is to create a new empty macro module
+'  and copy this source code into it.  Choose the following calc menus:
+'
+'      Tools -> Macros -> Organize Macros -> LibreOffice Basic...
+'
+'  In the dialog click the "Organizer..." button.  In the next dialog click "New..."
+' 
+'  After you copy the source code into place and save it, you can assign events to trigger
+'  the subroutines below.  With all this done, you can enter =getPrice(<ticker>, <date>) wherever
+'  you want a closing price in any of your spreadsheets.  
+'
+
+Global goDatabase As Object
+
+'
+' Subroutine to load libraries and open the database.  Assign this subroutine
+' to the event "start application" and save in "LibreOffice."
+'
+Sub MAPStart
+  Dim oLibs As Object
+  oLibs = GlobalScope.BasicLibraries
+  'Load required libraries.
+  LibName="Access2Base"    'from OO Macros & Dialogs collection
+  If oLibs.HasByName (LibName) AND (Not oLibs.isLibraryLoaded(LibName)) Then
+    oLibs.LoadLibrary(LibName)
+  End If
+  
+  ' Open the database.
+  If IsNull(goDatabase) Then 
+      Set goDatabase = OpenDatabase("portfolio", "getPrice", "getPricePassword", True)
+  End If
+End sub  
+
+'
+' Close the database.  Assign this subroutine to the event "close application" and save
+' in "Libreoffice."
+'
+Sub MAPStop
+  If Not(IsNull(goDatabase)) Then
+    goDatabase.mClose()
+   Set goDatabase = Nothing
+  End If
+End Sub
+
+'
+'
+' Return the closing price given the ticker symbol and the date.  The market must have been open 
+' on the given date.  
+'
+Function getPrice(ticker As String, trans_date As Date) As Variant
+    Dim oRecordset As Object
+    Dim n As Integer
+    Dim x As Double
+    
+    '
+    ' Initialize the database if necessary.
+    '
+    If IsNull(goDatabase) Then
+      Call MAPStart
+    End If
+
+    Set oRecordset = goDatabase.OpenRecordset("SELECT close FROM prices WHERE ticker = '" & ticker & "' AND trans_date = '" & CDateToIso(trans_date) & "' LIMIT 1")
+    n = oRecordset.RecordCount()
+
+    If n=1 Then
+       x = oRecordset.Fields(0).Value()
+       GETPRICE=x Else
+       GETPRICE=CVErr(519)
+    End If
+    
+    oRecordset.mClose()
+
+End Function
+
