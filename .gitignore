@@ -3,6 +3,9 @@
 *.a
 *.so
 
+# Ignore all executable files
+bin/**
+
 # Folders
 _obj
 _test
