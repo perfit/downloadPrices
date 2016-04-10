@@ -3,9 +3,6 @@
 *.a
 *.so
 
-# Ignore all executable files
-bin/**
-
 # Folders
 _obj
 _test
@@ -26,6 +23,3 @@ _testmain.go
 *.test
 *.prof
 
-# Ignore files associated with Eclipse
-.project
-.settings
