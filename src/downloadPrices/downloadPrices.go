@@ -19,6 +19,7 @@ import (
 )
 
 const url string = "http://real-chart.finance.yahoo.com/table.csv?s=%s&a=04&b=29&c=1986&d=%02d&e=%02d&f=%04d&g=d&ignore=.csv"
+const retries int = 5
 
 var t time.Time = time.Now().Local().AddDate(0, 0, -1) // Yesterday
 var db mysql.Conn
@@ -63,7 +64,7 @@ func main() {
 	wg = new(sync.WaitGroup)
 	for _, ticker := range tickers {
 		wg.Add(1)
-		go doSymbol(ticker, 5)
+		go doSymbol(ticker, retries)
 	}
 	wg.Wait()
 	log.Println("Normal successful completion.")
@@ -71,7 +72,7 @@ func main() {
 
 // Download a single stock's data (runs in parallel with copies working on other stocks).
 func doSymbol(symbol string, attempts int) {
-	if attempts==5 {
+	if attempts==retries {
 	    defer wg.Done()
 	}
 	// If we have trouble with the internet, wait 30 seconds and try again.
