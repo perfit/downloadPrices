@@ -73,7 +73,7 @@ func main() {
 // Download a single stock's data (runs in parallel with copies working on other stocks).
 func doSymbol(symbol string, attempts int) {
 	if attempts==retries {
-	    defer wg.Done()
+	   defer wg.Done()
 	}
 	// If we have trouble with the internet, wait 30 seconds and try again.
 	defer func(symbol string, attempts int) {
