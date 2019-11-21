@@ -6,16 +6,11 @@
 # The portfolio database is a local database of price data that is easily 
 # queried from LibreOffice calc by using the function getPrice(<symbol>, <date>).
 #
+# First create the database with the following command:
 #  CREATE DATABASE portfolio;
 #
-# Price data is downloaded from yahoo with downloadPrices.go and stored in the database.
-CREATE USER 'downloadPrices'@'localhost' IDENTIFIED BY 'downloadPricesPassword';
-GRANT SELECT, INSERT, UPDATE ON portfolio.prices TO 'downloadPrices'@'localhost';
-GRANT SELECT ON portfolio.tickers TO 'downloadPrices'@'localhost';
-
-# Price data is lookup up with getPrice(<ticker>,<date>).
-CREATE USER 'getPrice'@'localhost' IDENTIFIED BY 'getPricePassword';
-GRANT SELECT ON portfolio.prices TO 'getPrice'@'localhost';
+#  mysql portfolio < creaetPortfolio.sql
+#
 
 # This table lists all the ticker symbols for which price data will be gathered.
 DROP TABLE IF EXISTS tickers;
@@ -55,28 +50,34 @@ INSERT INTO tickers VALUES (21, "EFA", "iShares MSCI EAFE (EFA)");
 INSERT INTO tickers VALUES (22, "EFV", "iShares MSCI EAFE Value");
 INSERT INTO tickers VALUES (23, "EEM", "iShares MSCI Emerging Markets");
 INSERT INTO tickers VALUES (24, "IWM", "iShares Russell 2000");
-INSERT INTO tickers VALUES (26, "OKS", "ONEOK Partners, L.P.");
 INSERT INTO tickers VALUES (27, "OIBAX", "Oppenheimer International Bond A");
 INSERT INTO tickers VALUES (28, "PFN", "PIMCO Income Strategy Fund II ");
 INSERT INTO tickers VALUES (29, "SPY", "SPDR S&P 500 ETF");
-INSERT INTO tickers VALUES (30, "^VIX", "Volatility S&P Index");
-INSERT INTO tickers VALUES (31, "^SP500TR", "S&P 500 (TR) Index");
 
 # This table stores the historical stock prices. 
 DROP TABLE IF EXISTS prices;
 CREATE TABLE prices (
   id          INTEGER  AUTO_INCREMENT NOT NULL UNIQUE PRIMARY KEY,
   ticker      CHAR(8)  NOT NULL,
-  trans_date  DATE NOT NULL,
+  row_names   DATE NOT NULL,
   open        DECIMAL(7, 2) UNSIGNED NOT NULL,
   high        DECIMAL(7, 2) UNSIGNED NOT NULL,
   low         DECIMAL(7, 2) UNSIGNED NOT NULL,
   close       DECIMAL(7, 2) UNSIGNED NOT NULL,
   volume      INTEGER UNSIGNED NOT NULL,
-  adj_close   DECIMAL(7, 2) NOT NULL,
+  adjusted    DECIMAL(7, 2) NOT NULL,
   updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   );
   
 # Index for retrieval by the function getPrice(<symbol>, <date>)
 DROP INDEX IF EXISTS price_index ON prices;
-CREATE UNIQUE INDEX price_index ON prices (trans_date, ticker);
+CREATE UNIQUE INDEX price_index ON prices (row_names, ticker);
+
+# Price data is downloaded from yahoo with downloadPrices.go and stored in the database.
+CREATE USER 'downloadPrices'@'localhost' IDENTIFIED BY 'downloadPricesPassword';
+GRANT SELECT, INSERT, UPDATE ON portfolio.prices TO 'downloadPrices'@'localhost';
+GRANT SELECT ON portfolio.tickers TO 'downloadPrices'@'localhost';
+
+# Price data is lookup up with getPrice(<ticker>,<date>).
+CREATE USER 'getPrice'@'localhost' IDENTIFIED BY 'getPricePassword';
+GRANT SELECT ON portfolio.prices TO 'getPrice'@'localhost';

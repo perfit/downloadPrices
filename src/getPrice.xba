@@ -5,19 +5,41 @@
 '  Written by Michael Perfit, April 7, 2016
 '
 '
-'  The easiest way to deploy this in Libreoffice calc is to create a new empty macro module
-'  and copy this source code into it.  Choose the following calc menus:
+'  The easiest way to deploy this in Libreoffice calc is to create a new empty
+'  macro module and copy this source code into it.  Choose the following libre
+'  office menus:
 '
+'      $ libreoffice
 '      Tools -> Macros -> Organize Macros -> LibreOffice Basic...
 '
-'  In the dialog click the "Organizer..." button.  In the next dialog click "New..."
+'  In the dialog click the "Organizer..." button.  In the next dialog click
+'  "New..."
 ' 
-'  After you copy the source code into place and save it, you can assign events to trigger
-'  the subroutines below.  With all this done, you can enter =getPrice(<ticker>, <date>) wherever
+'  After you copy the source code into place and save it, you can assign events
+'  to trigger the macros below:
+'
+'  Event        Assigned Action
+'  Start Application   ...MAPStart
+'  Close Application   ...MAPStop
+'
+'  The next step is to use the Database Wizard of oobase to setup the database
+'  access.  Select "Connect to an existing database".  In the drop down box
+'  select MySQL.  Click "Next>".  Select "Connect using JDBC". Click "Next>".
+'  Set the Database name to "portfolio" and the Server to "localhost".
+'  Click "Next>".  Set the User name to "getPrice" and click the "Password
+'  required" check box.  Click "Next>".  On the last page select "Yes, register
+'  the database for me" and "Open the database for editing".  Click "Finish".
+'
+'  Finally, open the spreadsheet in which you want to lookup price data.
+'  Select the menu option "View > Data Sources". Right click the list of data
+'  sources and select registered databases.  It should be portfolio and the
+'  database file should be the portfolio.odb file created in the previous step.
+'
+'  With all this done, you can enter =getPrice(<ticker>, <date>) in any cell
 '  you want a closing price in any of your spreadsheets.  
 '
 
-Global goDatabase As Object
+Global gPortfolio As Object
 
 '
 ' Subroutine to load libraries and open the database.  Assign this subroutine
@@ -33,8 +55,8 @@ Sub MAPStart
   End If
   
   ' Open the database.
-  If IsNull(goDatabase) Then 
-      Set goDatabase = OpenDatabase("portfolio", "getPrice", "getPricePassword", True)
+  If IsNull(gPortfolio) Then 
+      Set gPortfolio = OpenDatabase("portfolio", "getPrice", "getPricePassword", True)
   End If
 End sub  
 
@@ -43,9 +65,9 @@ End sub
 ' in "Libreoffice."
 '
 Sub MAPStop
-  If Not(IsNull(goDatabase)) Then
-    goDatabase.mClose()
-   Set goDatabase = Nothing
+  If Not(IsNull(gPortfolio)) Then
+    gPortfolio.mClose()
+   Set gPortfolio = Nothing
   End If
 End Sub
 
@@ -62,11 +84,11 @@ Function getPrice(ticker As String, trans_date As Date) As Variant
     '
     ' Initialize the database if necessary.
     '
-    If IsNull(goDatabase) Then
+    If IsNull(gPortfolio) Then
       Call MAPStart
     End If
 
-    Set oRecordset = goDatabase.OpenRecordset("SELECT close FROM prices WHERE ticker = '" & ticker & "' AND trans_date = '" & CDateToIso(trans_date) & "' LIMIT 1")
+    Set oRecordset = gPortfolio.OpenRecordset("SELECT close FROM prices WHERE ticker = '" & ticker & "' AND row_names = '" & CDateToIso(trans_date) & "' LIMIT 1")
     n = oRecordset.RecordCount()
 
     If n=1 Then
